@@ -1,0 +1,1 @@
+This repository contains some basic framework for a [Plotly Dash](https://dash.plotly.com/introduction) dashboard.

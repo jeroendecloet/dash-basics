@@ -146,13 +146,15 @@ def update_dropdown_files(value):
     dd.State(dropdown_files, "value"),
     dd.State(data_loaded_data, "data")
 )
-def load_file(n_clicks, value, data):
+def load_file(n_clicks, value, data_json):
     """ Loads the CSV file from the dropdown menu into memory. """
     if (value is None) or (n_clicks == 0):
-        return data
+        return data_json
     else:
-        if data is None:
-            data = dict()
+        if data_json is None:
+            data_json = "{}"
+
+        data = putils.json_to_df(data_json)
         keys_in_data = set(list(data.keys()))
         keys_from_dropdown = set([os.path.splitext(os.path.basename(filename))[0] for filename in value])
         _to_add = keys_from_dropdown.difference(keys_in_data)
@@ -161,13 +163,13 @@ def load_file(n_clicks, value, data):
         if _to_add:
             _files = [_file for _file in value if os.path.splitext(os.path.basename(_file))[0] in _to_add]
             for _file, path in zip(_to_add, _files):
-                data = {**data, **putils.load_csv_to_json(path)}
+                data = {**data, **{_file: pd.read_csv(path)}}
 
         if _to_remove:
             for _file in _to_remove:
                 del data[_file]
 
-        return json.dumps(data)
+        return putils.dfs_dict_to_json(data)
 
 
 ################################################################################
@@ -211,8 +213,9 @@ def update_table_dropdowns(data_json, value):
     if value is None:
         return {}, []
 
-    keys_from_dropdown = set([os.path.splitext(os.path.basename(filename))[0] for filename in value])
-    dfs = {key: putils.json_to_df(data_json, key) for key in keys_from_dropdown}
+    # keys_from_dropdown = set([os.path.splitext(os.path.basename(filename))[0] for filename in value])
+    # dfs = {key: putils.json_to_df(data_json, key) for key in keys_from_dropdown}
+    dfs = putils.json_to_df(data_json)
 
     files = dfs.keys()
     columns = {key: df.columns for key, df in dfs.items()}
@@ -267,7 +270,7 @@ def line_plot(df: pd.DataFrame) -> go.Figure:
 )
 def update_graph(data_json):
     if data_json:
-        df = putils.json_to_df(data_json, key='example_data')
+        df = putils.json_to_df(data_json)['example_data']
     else:
         df = pd.DataFrame(data={'Date': pd.to_datetime(['2022-01-01']), 'Value': [np.nan]})
 
